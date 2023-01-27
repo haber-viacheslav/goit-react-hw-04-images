@@ -21,3 +21,5 @@ export const fetchPhotoApi = async (searchValue, pageNumber = 1) => {
     console.log(error);
   }
 };
+
+/// new
