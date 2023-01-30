@@ -81,11 +81,3 @@ App.propTypes = {
   searchQuery: PropTypes.string,
   page: PropTypes.number,
 };
-
-// componentDidUpdate(_, prevState) {
-//     if (
-//       prevState.page !== this.state.page ||
-//       prevState.searchQuery !== this.state.searchQuery
-//     ) {
-//       this.fetchImages(this.state.searchQuery, this.state.page);
-//     }
