@@ -1,4 +1,3 @@
-import { Component } from 'react';
 import Searchbar from './Searchbar';
 import ImageGallery from './ImageGallery';
 import Button from './Button';
@@ -6,99 +5,87 @@ import PropTypes from 'prop-types';
 import Loader from './Loader';
 import { AppWrp } from './App.styled';
 import { fetchPhotoApi } from './Api/FetchApi';
+import { useState, useEffect } from 'react';
 
-export class App extends Component {
-  static defaultProps = {
-    images: PropTypes.arrayOf(
-      PropTypes.shape({
-        id: PropTypes.number.isRequired,
-        webformatURL: PropTypes.string.isRequired,
-        largeImageURL: PropTypes.string.isRequired,
-        tags: PropTypes.string.isRequired,
-        totalImages: PropTypes.number.isRequired,
-      }).isRequired
-    ),
-    searchQuery: PropTypes.string.isRequired,
-    page: PropTypes.number.isRequired,
-  };
+export const App = () => {
+  const [images, setImages] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [totalImages, setTotalImages] = useState(0);
 
-  state = {
-    images: [],
-    searchQuery: '',
-    page: 1,
-    isLoading: false,
-    totalImages: 0,
-  };
-
-  handleOnSearch = searchQuery => {
-    if (!searchQuery || searchQuery === this.state.searchQuery) {
+  const handleOnSearch = newSearchQuery => {
+    if (newSearchQuery === '' || newSearchQuery === searchQuery) {
       return;
     }
-    this.setState({
-      isLoading: true,
-      searchQuery,
-      page: 1,
-      images: [],
-      totalImages: 0,
-    });
+    setImages([]);
+    setTotalImages(0);
+    setSearchQuery(newSearchQuery);
+    setPage(1);
   };
 
-  handleOnLoad = () => {
-    this.setState(prevState => ({
-      page: prevState.page + 1,
-      isLoading: true,
-    }));
+  const handleOnLoad = () => {
+    setPage(prevPage => prevPage + 1);
   };
 
-  fetchImages = async (searchQuery, page) => {
-    try {
-      const data = await fetchPhotoApi(searchQuery, page);
-
-      const minifyData = data.hits.map(
-        ({ id, webformatURL, largeImageURL, tags }) => {
-          return { id, webformatURL, largeImageURL, tags };
-        }
-      );
-      this.setState(prevState => ({
-        images:
-          page === 1 ? [...minifyData] : [...prevState.images, ...minifyData],
-        totalImages: data.totalHits / 12,
-      }));
-
-      return data.hits;
-    } catch (error) {
-      this.setState({ image: [] });
-      console.log(error);
-    } finally {
-      this.setState({
-        isLoading: false,
-      });
+  useEffect(() => {
+    async function fetchImages(searchQuery, page) {
+      try {
+        setIsLoading(true);
+        const data = await fetchPhotoApi(searchQuery, page);
+        const minifyData = data.hits.map(
+          ({ id, webformatURL, largeImageURL, tags }) => {
+            return { id, webformatURL, largeImageURL, tags };
+          }
+        );
+        setImages(prevImages => {
+          return page === 1 ? [...minifyData] : [...prevImages, ...minifyData];
+        });
+        setTotalImages(data.totalHits / 12);
+        return data.hits;
+      } catch (error) {
+        setImages([]);
+        console.log(error);
+      } finally {
+        setIsLoading(false);
+      }
     }
-  };
-
-  componentDidUpdate(_, prevState) {
-    if (
-      prevState.page !== this.state.page ||
-      prevState.searchQuery !== this.state.searchQuery
-    ) {
-      this.fetchImages(this.state.searchQuery, this.state.page);
+    if (!searchQuery) {
+      return;
     }
-  }
+    fetchImages(searchQuery, page);
+  }, [page, searchQuery]);
 
-  render() {
-    const { images, isLoading, page, totalImages } = this.state;
+  return (
+    <AppWrp>
+      <Searchbar onSubmit={handleOnSearch} />
+      <ImageGallery images={images} />
+      {!!images.length && page <= totalImages && (
+        <Button onClick={handleOnLoad} />
+      )}
+      {isLoading && <Loader />}
+    </AppWrp>
+  );
+};
 
-    return (
-      <AppWrp>
-        <Searchbar onSubmit={this.handleOnSearch} />
-        <ImageGallery images={images} />
-        {!!images.length && page <= totalImages && (
-          <Button onClick={this.handleOnLoad} />
-        )}
-        {isLoading && <Loader />}
-      </AppWrp>
-    );
-  }
-}
+App.propTypes = {
+  images: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.number.isRequired,
+      webformatURL: PropTypes.string.isRequired,
+      largeImageURL: PropTypes.string.isRequired,
+      tags: PropTypes.string.isRequired,
+      totalImages: PropTypes.number.isRequired,
+    }).isRequired
+  ),
+  searchQuery: PropTypes.string,
+  page: PropTypes.number,
+};
 
-// new change
+// componentDidUpdate(_, prevState) {
+//     if (
+//       prevState.page !== this.state.page ||
+//       prevState.searchQuery !== this.state.searchQuery
+//     ) {
+//       this.fetchImages(this.state.searchQuery, this.state.page);
+//     }

@@ -11,7 +11,7 @@ const searchParams = new URLSearchParams({
   orientation: 'horizontal',
 });
 
-export const fetchPhotoApi = async (searchValue, pageNumber = 1) => {
+export const fetchPhotoApi = async (searchValue, pageNumber) => {
   try {
     const response = await axios.get(
       `?q=${searchValue}&page=${pageNumber}&${searchParams}}&per_page=${PER_PAGE}`
@@ -21,5 +21,3 @@ export const fetchPhotoApi = async (searchValue, pageNumber = 1) => {
     console.log(error);
   }
 };
-
-/// new
